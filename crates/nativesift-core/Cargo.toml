@@ -1,0 +1,21 @@
+[package]
+name = "nativesift-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+nativesift-platform = { path = "../nativesift-platform" }
+crossbeam-channel.workspace = true
+log.workspace = true
+memmap2.workspace = true
+nucleo-matcher.workspace = true
+parking_lot.workspace = true
+rayon.workspace = true
+tantivy.workspace = true
+thiserror.workspace = true
+walkdir.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
