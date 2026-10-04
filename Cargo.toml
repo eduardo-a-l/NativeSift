@@ -1,0 +1,34 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/nativesift-platform",
+  "crates/nativesift-core",
+  "crates/nativesift-cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/eduardo-a-l/NativeSift"
+
+[workspace.dependencies]
+crossbeam-channel = "0.5"
+cxx = "1"
+cxx-build = "1"
+env_logger = "0.11"
+log = "0.4"
+memmap2 = "0.9"
+nucleo-matcher = "0.3"
+parking_lot = "0.12"
+rayon = "1"
+tantivy = "0.22"
+tempfile = "3"
+thiserror = "1"
+walkdir = "2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"

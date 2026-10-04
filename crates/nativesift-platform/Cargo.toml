@@ -1,0 +1,19 @@
+[package]
+name = "nativesift-platform"
+description = "Native file system change tracking for NativeSift, bridged from C++ with cxx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+build = "build.rs"
+
+[dependencies]
+crossbeam-channel.workspace = true
+cxx.workspace = true
+thiserror.workspace = true
+
+[build-dependencies]
+cxx-build.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
