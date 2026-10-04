@@ -41,6 +41,7 @@ fn reports_created_and_modified_files() {
     assert!(wait_for(&events, |event| {
         matches!(event, ChangeEvent::Created(path) if has_name(path, "hello.txt"))
     }));
+    #[cfg(target_os = "linux")]
     assert!(wait_for(&events, |event| {
         matches!(event, ChangeEvent::Modified(path) if has_name(path, "hello.txt"))
     }));

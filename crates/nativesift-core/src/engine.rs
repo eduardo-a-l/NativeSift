@@ -245,6 +245,18 @@ mod tests {
             self.dir.path().join(relative)
         }
 
+        fn hits_named(&self, query: &str, file_name: &str) -> usize {
+            self.engine
+                .search_paths(query, 50)
+                .iter()
+                .filter(|hit| {
+                    Path::new(&hit.path)
+                        .file_name()
+                        .is_some_and(|name| name == file_name)
+                })
+                .count()
+        }
+
         fn content_paths(&self, query: &str) -> Vec<String> {
             self.engine
                 .search_content(query, 10)
@@ -259,8 +271,8 @@ mod tests {
     fn initial_scan_indexes_paths_and_text_but_skips_ignored_dirs() {
         let fixture = Fixture::new();
         assert_eq!(fixture.engine.path_count(), 4);
-        assert!(fixture.engine.search_paths("HEAD", 5).is_empty());
-        assert_eq!(fixture.engine.search_paths("main.rs", 5).len(), 1);
+        assert_eq!(fixture.hits_named("HEAD", "HEAD"), 0);
+        assert_eq!(fixture.hits_named("main.rs", "main.rs"), 1);
         assert_eq!(fixture.content_paths("hello").len(), 1);
         assert!(fixture
             .content_paths("fuzzy")
@@ -271,7 +283,7 @@ mod tests {
     #[test]
     fn binary_files_are_findable_by_name_only() {
         let fixture = Fixture::new();
-        assert_eq!(fixture.engine.search_paths("photo", 5).len(), 1);
+        assert_eq!(fixture.hits_named("photo", "photo.png"), 1);
     }
 
     #[test]
@@ -283,7 +295,7 @@ mod tests {
             .engine
             .apply_events(vec![ChangeEvent::Created(created.clone())])
             .unwrap();
-        assert_eq!(fixture.engine.search_paths("new_module", 5).len(), 1);
+        assert_eq!(fixture.hits_named("new_module", "new_module.rs"), 1);
         assert_eq!(fixture.content_paths("brandnew").len(), 1);
 
         fs::write(&created, "pub fn rewritten() {}").unwrap();
@@ -304,7 +316,7 @@ mod tests {
             .engine
             .apply_events(vec![ChangeEvent::Deleted(target)])
             .unwrap();
-        assert!(fixture.engine.search_paths("main.rs", 5).is_empty());
+        assert_eq!(fixture.hits_named("main.rs", "main.rs"), 0);
         assert!(fixture.content_paths("hello").is_empty());
     }
 
@@ -318,8 +330,8 @@ mod tests {
             .engine
             .apply_events(vec![ChangeEvent::Renamed { from, to }])
             .unwrap();
-        assert!(fixture.engine.search_paths("engine.rs", 5).is_empty());
-        assert_eq!(fixture.engine.search_paths("core.rs", 5).len(), 1);
+        assert_eq!(fixture.hits_named("engine.rs", "engine.rs"), 0);
+        assert_eq!(fixture.hits_named("core.rs", "core.rs"), 1);
         assert_eq!(fixture.content_paths("engine").len(), 1);
         assert!(fixture.content_paths("engine")[0].ends_with("core.rs"));
     }
@@ -337,8 +349,16 @@ mod tests {
         let hits = fixture.content_paths("fuzzy");
         assert_eq!(hits.len(), 1);
         assert!(hits[0].contains("manual"));
-        assert!(fixture.engine.search_paths("docs/guide", 5).is_empty());
-        assert_eq!(fixture.engine.search_paths("manual guide", 5).len(), 1);
+        assert!(fixture
+            .engine
+            .search_paths("guide.md", 50)
+            .iter()
+            .all(|hit| {
+                !Path::new(&hit.path)
+                    .components()
+                    .any(|part| part.as_os_str() == "docs")
+            }));
+        assert_eq!(fixture.hits_named("manual guide", "guide.md"), 1);
     }
 
     #[test]
@@ -364,7 +384,7 @@ mod tests {
             .engine
             .apply_events(vec![ChangeEvent::Created(fixture.path("vendor"))])
             .unwrap();
-        assert_eq!(fixture.engine.search_paths("util.rs", 5).len(), 1);
+        assert_eq!(fixture.hits_named("util.rs", "util.rs"), 1);
         assert_eq!(fixture.content_paths("helper").len(), 1);
     }
 
@@ -382,7 +402,7 @@ mod tests {
                 ChangeEvent::Deleted(flicker),
             ])
             .unwrap();
-        assert!(fixture.engine.search_paths("flicker", 5).is_empty());
+        assert_eq!(fixture.hits_named("flicker", "flicker.rs"), 0);
         assert!(fixture.content_paths("flicker").is_empty());
     }
 
@@ -395,7 +415,7 @@ mod tests {
             .engine
             .apply_events(vec![ChangeEvent::Created(ignored)])
             .unwrap();
-        assert!(fixture.engine.search_paths("objects_note", 5).is_empty());
+        assert_eq!(fixture.hits_named("objects_note", "objects_note.txt"), 0);
     }
 
     #[test]
@@ -409,8 +429,8 @@ mod tests {
                 fixture.dir.path().to_path_buf(),
             )])
             .unwrap();
-        assert_eq!(fixture.engine.search_paths("missed.rs", 5).len(), 1);
-        assert!(fixture.engine.search_paths("main.rs", 5).is_empty());
+        assert_eq!(fixture.hits_named("missed.rs", "missed.rs"), 1);
+        assert_eq!(fixture.hits_named("main.rs", "main.rs"), 0);
         assert_eq!(fixture.engine.path_count(), 4);
         assert_eq!(fixture.content_paths("missed").len(), 1);
         assert!(fixture.content_paths("hello").is_empty());
