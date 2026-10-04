@@ -38,4 +38,16 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --workspace --all-targets
-      - run: cargo test --workspace
+      - name: Test
+        shell: bash
+        run: |
+          status=0
+          cargo test --workspace --no-fail-fast > test.log 2>&1 || status=$?
+          cat test.log
+          if [ "$status" -ne 0 ]; then
+            summary=$(grep -E -A3 'panicked at|^test .* FAILED|^error|SIGSEGV|SIGABRT|signal:' test.log | head -60)
+            summary="${summary//'%'/'%25'}"
+            summary="${summary//$'\n'/'%0A'}"
+            echo "::error title=Test failures::${summary}"
+          fi
+          exit "$status"
