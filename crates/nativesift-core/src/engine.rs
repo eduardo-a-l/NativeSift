@@ -242,7 +242,9 @@ mod tests {
         }
 
         fn path(&self, relative: &str) -> PathBuf {
-            self.dir.path().join(relative)
+            relative
+                .split('/')
+                .fold(self.dir.path().to_path_buf(), |path, part| path.join(part))
         }
 
         fn hits_named(&self, query: &str, file_name: &str) -> usize {
