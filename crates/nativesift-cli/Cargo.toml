@@ -1,0 +1,15 @@
+[package]
+name = "nativesift-cli"
+description = "Headless command line front end for NativeSift"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "nativesift"
+path = "src/main.rs"
+
+[dependencies]
+env_logger.workspace = true
+nativesift-core = { path = "../nativesift-core" }
